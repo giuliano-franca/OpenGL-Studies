@@ -5,8 +5,28 @@ Copyright (c) 2019 Giuliano França
 Redistribution:
     MIT License.
 
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
 How to use:
-    * Pass
+    * Install Python 3. (I'm using Python 3.7.4)
+    * Pip install all the dependencies.
+    * Run the file.
 
 Dependencies:
     * Python 3
@@ -14,9 +34,12 @@ Dependencies:
     * PySide2
 
 Todo:
-    * NDA
+    * Add the other draw types
+    * Fix the rotation intensity to all fps settings.
+    * Add wireframe drawing option.
+    * [FUTURE] Add a import file based system to read FBX in a future version.
 
-Source:
+Sources:
     * sentdex Youtube channel video: https://www.youtube.com/watch?v=R4n4NyDG2hI
     * https://www.youtube.com/watch?v=R4n4NyDG2hI&list=PLQVvvaa0QuDdfGpqjkEJSeWKGCP31__wD
     * https://www.youtube.com/watch?v=qK9rQaBM5rs
