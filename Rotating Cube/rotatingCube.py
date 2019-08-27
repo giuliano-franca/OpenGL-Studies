@@ -32,6 +32,7 @@ Dependencies:
     * Python 3
     * PyOpenGL
     * PySide2
+    * Numpy
 
 Todo:
     * Add the other draw types
@@ -49,6 +50,9 @@ Sources:
 This code supports Pylint. Rc file in project.
 """
 import sys
+import math
+import collections
+import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 from PySide2 import QtWidgets, QtCore
@@ -90,14 +94,14 @@ class DrawTypes(object):
     Enum {
         kCubeLines
         kCube
+        kTorus
         kPyramidLines
         kPyramid
     }
     """
     kCubeLines = 0
     kCube = 1
-    kPyramidLines = 2
-    kPyramid = 3
+    kTorus = 2
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -110,7 +114,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.widget = PySideOpenGL(self)
         self.setCentralWidget(self.widget)
 
-        self.widget.drawType = DrawTypes.kCube
+        self.widget.drawType = DrawTypes.kTorus
         self.widget.rotMult = 1.0
 
         self.fpsList = {"12": 1000.0 / 12.0,
@@ -127,10 +131,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drawCubeLinesAction.triggered.connect(lambda: self.setDrawType(DrawTypes.kCubeLines))
         self.drawCubeAction = QtWidgets.QAction('Cube', self)
         self.drawCubeAction.triggered.connect(lambda: self.setDrawType(DrawTypes.kCube))
-        self.drawPyramidLinesAction = QtWidgets.QAction('Pyramid wireframe', self)
-        # self.drawPyramidLinesAction.triggered.connect()
-        self.drawPyramidAction = QtWidgets.QAction('Pyramid', self)
-        # self.drawPyramidAction.triggered.connect()
+        self.drawTorusLinesAction = QtWidgets.QAction('Torus wireframe', self)
+        self.drawTorusLinesAction.triggered.connect(lambda: self.setDrawType(DrawTypes.kTorus))
         self.playAnimationAction = QtWidgets.QAction('Toggle animation', self)
         self.playAnimationAction.setCheckable(True)
         self.playAnimationAction.setChecked(False)
@@ -162,8 +164,7 @@ class MainWindow(QtWidgets.QMainWindow):
         drawTypeMenu = fileMenu.addMenu("&Draw Type")
         drawTypeMenu.addAction(self.drawCubeLinesAction)
         drawTypeMenu.addAction(self.drawCubeAction)
-        drawTypeMenu.addAction(self.drawPyramidLinesAction)
-        drawTypeMenu.addAction(self.drawPyramidAction)
+        drawTypeMenu.addAction(self.drawTorusLinesAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self.exitAction)
         animationMenu = self.menuBar().addMenu("&Animation")
@@ -176,10 +177,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fpsMenu.addAction(self.setFPS60Action)
 
         self.timer = QtCore.QTimer(self)
-        self.setFPS("24")
+        self.setFPS("60")
         self.timer.timeout.connect(self.widget.spin)
 
-        self.setWindowTitle("Testing PyOpenGL with PySide2")
+        self.setWindowTitle("Testing PyOpenGL with PySide2 - Procedural objects")
 
     def togglePlayAnimation(self):
         """ Toggle play animation. """
@@ -250,14 +251,25 @@ class PySideOpenGL(QtWidgets.QOpenGLWidget):
         """ Draw objects. """
         if self.drawType == DrawTypes.kCubeLines:
             gl.glBegin(gl.GL_LINES)
+            gl.glColor3f(1.0, 1.0, 1.0)
             for edge in kEdges:
                 for vertex in edge:
-                    if vertex % 2 == 0:
-                        gl.glColor3f(1.0, 0.0, 0.0)
-                    else:
-                        gl.glColor3f(0.0, 1.0, 1.0)
                     gl.glVertex3f(kVerticies[vertex][0], kVerticies[vertex][1], kVerticies[vertex][2])  # or gl.glVertex3fv(kVertices[vertex])
             gl.glEnd()
+            # width = 1.0         # X
+            # height = 1.0        # Y
+            # depth = 1.0         # Z
+            # subdWidth = 1
+            # subdHeight = 1
+            # subdDepth = 1
+            # gl.glPointSize(3)
+            # gl.glBegin(gl.GL_POINTS)
+            # for w in range(subdWidth):
+            #     wStep = width / subdWidth
+            #     for h in range(subdHeight):
+            #         hStep = height / subdHeight
+            #         gl.glVertex3f(wStep * (w - width), hStep * (w - height), 0.0)
+            # gl.glEnd()
         elif self.drawType == DrawTypes.kCube:
             gl.glBegin(gl.GL_QUADS)
             for surface in kSurfaces:
@@ -276,6 +288,54 @@ class PySideOpenGL(QtWidgets.QOpenGLWidget):
             for edge in kEdges:
                 for vertex in edge:
                     gl.glVertex3f(kVerticies[vertex][0], kVerticies[vertex][1], kVerticies[vertex][2])  # or gl.glVertex3fv(kVertices[vertex])
+            gl.glEnd()
+        elif self.drawType == DrawTypes.kTorus:
+            subdAxis = 15
+            subdHeight = 20
+            radius = 1.0
+            radiusSec = 0.5
+            step = 2.0 * math.pi / subdAxis
+            stepSec = 2.0 * math.pi / subdHeight
+            loops = collections.OrderedDict()
+            for i in range(subdAxis):
+                gl.glColor3f(1.0, 0.0, 0.0)
+                alpha = step * i + (math.pi / 2.0)
+                mOrigin = np.identity(4)
+                mOrigin[0][0] = math.cos(-alpha)
+                mOrigin[0][2] = -math.sin(-alpha)
+                mOrigin[2][0] = math.sin(-alpha)
+                mOrigin[2][2] = math.cos(-alpha)
+                mOrigin[3][0] = math.cos(step * i) * radius
+                mOrigin[3][2] = math.sin(step * i) * radius
+                pivotInfo = collections.OrderedDict()
+                for j in range(subdHeight):
+                    gl.glColor3f(1.0, 1.0, 1.0)
+                    beta = stepSec * j
+                    mChildL = np.identity(4)
+                    mChildL[3][1] = -math.sin(beta) * radiusSec
+                    mChildL[3][2] = math.cos(beta) * radiusSec
+                    mChildW = np.matmul(mChildL, mOrigin)
+                    pivotInfo["Point %s" % j] = [mChildW[3][0], mChildW[3][1], mChildW[3][2]]
+                loops["Pivot %s" % i] = pivotInfo
+            gl.glBegin(gl.GL_LINES)
+            for i in range(subdAxis):
+                for j in range(subdHeight):
+                    gl.glColor3f(1.0, 1.0, 1.0)
+                    aID = i + 1
+                    if aID == subdAxis:
+                        aID = 0
+                    pID = j + 1
+                    if pID == subdHeight:
+                        pID = 0
+                    startAxis = loops["Pivot %s" % str(i)]["Point %s" % str(j)]
+                    endAxis = loops["Pivot %s" % str(aID)]["Point %s" % str(j)]
+                    startHeight = loops["Pivot %s" % str(i)]["Point %s" % str(j)]
+                    endHeight = loops["Pivot %s" % str(i)]["Point %s" % str(pID)]
+                    gl.glVertex3f(startAxis[0], startAxis[1], startAxis[2])
+                    gl.glVertex3f(endAxis[0], endAxis[1], endAxis[2])
+                    gl.glColor3f(1.0, 1.0, 1.0)
+                    gl.glVertex3f(startHeight[0], startHeight[1], startHeight[2])
+                    gl.glVertex3f(endHeight[0], endHeight[1], endHeight[2])
             gl.glEnd()
         else:
             pass
