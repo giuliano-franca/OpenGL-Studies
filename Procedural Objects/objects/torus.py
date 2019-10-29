@@ -32,6 +32,7 @@ How to use:
 Dependencies:
     * Python 3
     * PyOpenGL
+    * GLFW
     * PySide2
     * Numpy
 
@@ -54,13 +55,13 @@ from PySide2 import QtUiTools
 class ProceduralTorus(QtCore.QObject):
     """Class of the torus parameters."""
 
-    def __init__(self, file, glViwer, parent=None):
+    def __init__(self, file, glViewer, parent=None):
         super(ProceduralTorus, self).__init__(parent)
         loader = QtUiTools.QUiLoader()
         torusUIFile = QtCore.QFile(file)
         torusUIFile.open(QtCore.QFile.ReadOnly)
         self.widget = loader.load(torusUIFile)
-        self.glViwer = glViwer
+        self.glViewer = glViewer
         torusUIFile.close()
 
         self._radius = 10
@@ -74,32 +75,25 @@ class ProceduralTorus(QtCore.QObject):
 
     def configureWidgets(self):
         """Configure all widgets."""
-        # self.widget.sld_radius.setValue(self.radiusDef)
-        # self.widget.sld_secRadius.setValue(self.secRadiusDef)
-        # self.widget.sld_twist.setValue(self.twistDef)
-        # self.widget.sld_subdAxis.setValue(self.subdAxisDef)
-        # self.widget.sld_subdHeight.setValue(self.subdHeightDef)
-        self.widget.sld_radius.sliderReleased.connect(self.updateAllValues)
-        return None
-
-    def updateGLViewer(self):
-        """Update the GL Widget."""
-        self.glViewer.obj = self
-        self.glViewer.update()
-
-    def updateSliderValue(self, slider):
-        """Update slider values.
-
-        Args:
-            slider (QSlider): The slider object.
-        """
-        value = slider.value()
-        self._radius = value
+        self.widget.sld_radius.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_secRadius.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_twist.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_subdAxis.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_subdHeight.sliderMoved.connect(self.updateAllValues)
 
     def updateAllValues(self):
+        """Update all values from the sliders to the instance."""
         radiusVal = self.widget.sld_radius.value()
+        secRadiusVal = self.widget.sld_secRadius.value()
+        twistVal = self.widget.sld_twist.value()
+        subdAxisVal = self.widget.sld_subdAxis.value()
+        subdHeightVal = self.widget.sld_subdHeight.value()
         self._radius = radiusVal
-        self.glViwer.update()
+        self._secRadius = secRadiusVal
+        self._twist = twistVal
+        self._subdAxis = subdAxisVal
+        self._subdHeight = subdHeightVal
+        self.glViewer.update()
 
     def restoreDefaults(self):
         """Restores widgets to default value."""
@@ -108,6 +102,7 @@ class ProceduralTorus(QtCore.QObject):
         self.widget.sld_twist.setValue(0)
         self.widget.sld_subdAxis.setValue(10)
         self.widget.sld_subdHeight.setValue(10)
+        self.updateAllValues()
 
     @property
     def torusRadius(self):
@@ -156,6 +151,7 @@ class ProceduralTorus(QtCore.QObject):
 
     def draw(self):
         """Draw a torus using OpenGL functions."""
+        # pylint: disable=unused-variable
         subdAxis = self.torusSubdAxis
         subdHeight = self.torusSubdHeight
         radius = self.torusRadius
@@ -166,7 +162,7 @@ class ProceduralTorus(QtCore.QObject):
         stepSec = 2.0 * math.pi / subdHeight
         loops = collections.OrderedDict()
         gl.glColor3f(1.0, 0.0, 0.0)
-        gl.glPointSize(3.0)
+        gl.glPointSize(6.0)
         gl.glBegin(gl.GL_POINTS)
         for i in range(subdAxis):
             alpha = step * i + (math.pi / 2.0)

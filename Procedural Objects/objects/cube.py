@@ -32,6 +32,7 @@ How to use:
 Dependencies:
     * Python 3
     * PyOpenGL
+    * GLFW
     * PySide2
     * Numpy
 
@@ -39,10 +40,14 @@ Todo:
     * NDA
 
 Sources:
-    * NDA
+    * https://www.desmos.com/calculator/4u5eih39bk
 
 This code supports Pylint. Rc file in project.
 """
+import math
+import collections
+import numpy as np
+import OpenGL.GL as gl
 from PySide2 import QtCore
 from PySide2 import QtUiTools
 
@@ -50,35 +55,59 @@ from PySide2 import QtUiTools
 class ProceduralCube(QtCore.QObject):
     """Class of the cube parameters."""
 
-    def __init__(self, file, parent=None):
+    def __init__(self, file, glViewer, parent=None):
         super(ProceduralCube, self).__init__(parent)
         loader = QtUiTools.QUiLoader()
         cubeUIFile = QtCore.QFile(file)
         cubeUIFile.open(QtCore.QFile.ReadOnly)
         self.widget = loader.load(cubeUIFile)
+        self.glViewer = glViewer
         cubeUIFile.close()
 
-        self.widthDef = 10
-        self.heightDef = 10
-        self.depthDef = 10
-        self.subdWidthDef = 1
-        self.subdHeightDef = 1
-        self.subdDepthDef = 1
+        self._width = 10
+        self._height = 10
+        self._depth = 10
+        self._subdWidth = 1
+        self._subdHeight = 1
+        self._subdDepth = 1
 
+        self.restoreDefaults()
         self.configureWidgets()
 
     def configureWidgets(self):
         """Configure all widgets."""
-        self.widget.sld_width.setValue(self.widthDef)
-        self.widget.sld_height.setValue(self.heightDef)
-        self.widget.sld_depth.setValue(self.depthDef)
-        self.widget.sld_subdWidth.setValue(self.subdWidthDef)
-        self.widget.sld_subdHeight.setValue(self.subdHeightDef)
-        self.widget.sld_subdDepth.setValue(self.subdDepthDef)
+        self.widget.sld_width.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_height.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_depth.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_subdWidth.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_subdHeight.sliderMoved.connect(self.updateAllValues)
+        self.widget.sld_subdDepth.sliderMoved.connect(self.updateAllValues)
+
+    def updateAllValues(self):
+        """Update all values from the sliders to the instance."""
+        widthVal = self.widget.sld_width.value()
+        heightVal = self.widget.sld_height.value()
+        depthVal = self.widget.sld_depth.value()
+        subdWidthVal = self.widget.sld_subdWidth.value()
+        subdHeightVal = self.widget.sld_subdHeight.value()
+        subdDepthVal = self.widget.sld_subdDepth.value()
+        self._width = widthVal
+        self._height = heightVal
+        self._depth = depthVal
+        self._subdWidth = subdWidthVal
+        self._subdHeight = subdHeightVal
+        self._subdDepth = subdDepthVal
+        self.glViewer.update()
 
     def restoreDefaults(self):
         """Restores widgets to default value."""
-        self.configureWidgets()
+        self.widget.sld_width.setValue(10)
+        self.widget.sld_height.setValue(10)
+        self.widget.sld_depth.setValue(10)
+        self.widget.sld_subdWidth.setValue(1)
+        self.widget.sld_subdHeight.setValue(1)
+        self.widget.sld_subdDepth.setValue(1)
+        self.updateAllValues()
 
     @property
     def cubeWidth(self):
@@ -87,7 +116,7 @@ class ProceduralCube(QtCore.QObject):
         Returns:
             float: The width value of the cube.
         """
-        return self.widget.sld_width.value() * 0.1
+        return self._width * 0.1
 
     @property
     def cubeHeight(self):
@@ -96,7 +125,7 @@ class ProceduralCube(QtCore.QObject):
         Returns:
             float: The height value of the cube.
         """
-        return self.widget.sld_height.value() * 0.1
+        return self._height * 0.1
 
     @property
     def cubeDepth(self):
@@ -105,8 +134,60 @@ class ProceduralCube(QtCore.QObject):
         Returns:
             float: The depth value of the cube.
         """
-        return self.widget.sld_depth.value() * 0.1
+        return self._depth * 0.1
+
+    @property
+    def cubeSubdWidth(self):
+        """Return the subdivisions width of the cube.
+
+        Returns:
+            float: The subdivisions width value of the cube.
+        """
+        return self._subdWidth
+
+    @property
+    def cubeSubdHeight(self):
+        """Return the subdivisions height of the cube.
+
+        Returns:
+            float: The subdivisions height value of the cube.
+        """
+        return self._subdHeight
+
+    @property
+    def cubeSubdDepth(self):
+        """Return the subdivisions depth of the cube.
+
+        Returns:
+            float: The subdivisions depth value of the cube.
+        """
+        return self._subdDepth
 
     def draw(self):
         """Draw a cube using OpenGL functions."""
-        return None
+        # pylint: disable=unused-variable
+        width = self.cubeWidth
+        height = self.cubeHeight
+        depth = self.cubeDepth
+        subdWidth = self.cubeSubdWidth
+        subdHeight = self.cubeSubdHeight
+        subdDepth = self.cubeSubdDepth
+
+        stepW = 1 / subdWidth
+        stepH = 1 / subdHeight
+        stepD = 1 / subdDepth
+
+        vtxList = []
+
+        gl.glColor3f(1.0, 0.0, 0.0)
+        gl.glPointSize(6.0)
+        gl.glBegin(gl.GL_POINTS)
+        gl.glVertex3f(width, height, depth)
+        gl.glVertex3f(-width, height, depth)
+        gl.glVertex3f(width, -height, depth)
+        gl.glVertex3f(-width, -height, depth)
+        gl.glVertex3f(width, -height, -depth)
+        gl.glVertex3f(-width, -height, -depth)
+        gl.glVertex3f(width, height, -depth)
+        gl.glVertex3f(-width, height, -depth)
+        gl.glEnd()
